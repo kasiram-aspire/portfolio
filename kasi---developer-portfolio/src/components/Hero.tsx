@@ -122,7 +122,7 @@ export const Hero: React.FC<HeroProps> = ({ profile, onNavigate, accentColor }) 
         }}
       >
         <img
-          src="assets/swd_casual_kasi-1.png"
+          src="/assets/swd_casual_kasi-1.png"
           alt={profile.name}
           referrerPolicy="no-referrer"
           onError={(e) => {
