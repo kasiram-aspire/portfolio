@@ -1,8 +1,18 @@
 import express from 'express';
 import path from 'path';
 import os from 'os';
+import dns from 'dns';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+
+// Force DNS resolution to prefer IPv4 first across Node.js networking
+try {
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+} catch {
+  // ignore if not supported in old node versions
+}
 
 // Load .env first, then fallback to .env.example if variables are missing
 dotenv.config();
@@ -85,7 +95,9 @@ Sent via Portfolio Backend Dispatcher
           tls: {
             rejectUnauthorized: false,
           },
-        });
+          // Force IPv4 address resolution to fix ENETUNREACH on Render/Cloud containers without IPv6
+          family: 4,
+        } as any);
       };
 
       let sendError: any = null;
