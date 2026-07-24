@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 import dns from 'dns';
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 // Force DNS resolution to prefer IPv4 first across Node.js networking
@@ -66,6 +67,38 @@ ${message}
 Sent via Portfolio Backend Dispatcher
       `.trim();
 
+      // 1. First try Resend API (HTTPS based - works everywhere including Render)
+      const resendApiKey = process.env.RESEND_API_KEY || 're_DT71V89E_2oG7vk31t2zqiycDXeX2KuDF';
+      if (resendApiKey) {
+        try {
+          console.log('[Email Dispatch] Attempting email send via Resend API...');
+          const resend = new Resend(resendApiKey);
+          const resendResult = await resend.emails.send({
+            from: 'Portfolio Contact <onboarding@resend.dev>',
+            to: 'kasiram186@gmail.com',
+            replyTo: email,
+            subject: mailSubject,
+            text: emailBody,
+          });
+
+          if (resendResult.error) {
+            console.warn('[Email Dispatch Warning] Resend returned error:', resendResult.error);
+            throw new Error(resendResult.error.message || 'Resend delivery failed');
+          }
+
+          console.log('[Email Dispatch] Successfully sent email via Resend API! ID:', resendResult.data?.id);
+          return res.status(200).json({
+            success: true,
+            message: 'Your message has been sent directly to kasiram186@gmail.com!',
+            recipient,
+            sentViaResend: true,
+          });
+        } catch (resendErr: any) {
+          console.warn('[Email Dispatch Warning] Resend send failed, attempting SMTP fallback:', resendErr?.message || resendErr);
+        }
+      }
+
+      // 2. Fallback to Nodemailer SMTP
       const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
       const configuredPort = Number(process.env.SMTP_PORT) || 587;
       const smtpUser = process.env.SMTP_USER || 'kasiram186@gmail.com';
