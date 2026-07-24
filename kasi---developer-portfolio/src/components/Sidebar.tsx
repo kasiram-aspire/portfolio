@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col items-center text-center mt-4 mb-6">
             <div className="relative group cursor-pointer" onClick={() => handleNavClick('hero')} title="Available for work">
               <img
-                src={profile.avatarUrl || 'assets/swd_kasi.png'}
+                src={'assets/swd_kasi.png'}
                 alt={profile.name}
                 referrerPolicy="no-referrer"
                 className="w-28 h-28 rounded-full object-cover object-[60%_center] border-4 border-emerald-500 shadow-[0_0_18px_rgba(16,185,129,0.45)] transition-all duration-300 group-hover:scale-105 group-hover:border-emerald-400 group-hover:shadow-[0_0_25px_rgba(16,185,129,0.75)]"

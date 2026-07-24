@@ -10,7 +10,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env.example') });
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = 3000;
 
   app.use(express.json());
 
@@ -97,6 +97,10 @@ Sent via Portfolio Backend Dispatcher
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
   });
+
+  // Serve static assets directory
+  app.use('/assets', express.static(path.join(process.cwd(), 'public', 'assets')));
+  app.use('/assets', express.static(path.join(process.cwd(), 'assets')));
 
   // Vite middleware for development or static serving in production
   if (process.env.NODE_ENV !== 'production') {

@@ -78,7 +78,7 @@ export const About: React.FC<AboutProps> = ({ profile, accentColor, onNavigate }
             <div className="relative group w-full max-w-md sm:max-w-lg lg:max-w-full">
               <div className={`absolute -inset-2 ${getAccentBg()} opacity-20 blur-xl rounded-2xl group-hover:opacity-30 transition-opacity`} />
               <img
-                src={profile.avatarUrl || 'assets/swd_kasi.png'}
+                src={'assets/swd_kasi.png'}
                 alt={profile.name}
                 referrerPolicy="no-referrer"
                 className="relative rounded-2xl object-cover object-[80%_center] w-full h-80 sm:h-[420px] lg:h-[450px] shadow-2xl border border-slate-200 dark:border-slate-800"
