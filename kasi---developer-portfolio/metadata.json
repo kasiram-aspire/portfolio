@@ -1,0 +1,6 @@
+{
+  "name": "Kasi - Developer Portfolio",
+  "description": "High-fidelity, interactive, responsive developer portfolio featuring left sidebar navigation, hero section, about, skills, resume, portfolio, services, and contact form.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
