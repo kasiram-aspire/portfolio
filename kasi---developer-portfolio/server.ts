@@ -69,6 +69,12 @@ Sent via Portfolio Backend Dispatcher
 
       // 1. First try Resend API (HTTPS based - works everywhere including Render)
       const resendApiKey = process.env.RESEND_API_KEY || 're_DT71V89E_2oG7vk31t2zqiycDXeX2KuDF';
+      console.log("========== RESEND DEBUG ==========");
+console.log("API Key Exists:", !!process.env.RESEND_API_KEY);
+console.log("API Key Prefix:", process.env.RESEND_API_KEY?.substring(0, 8));
+console.log("Using Fallback Key:", !process.env.RESEND_API_KEY);
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("==================================");
       if (resendApiKey) {
         try {
           console.log('[Email Dispatch] Attempting email send via Resend API...');
@@ -94,6 +100,12 @@ Sent via Portfolio Backend Dispatcher
             sentViaResend: true,
           });
         } catch (resendErr: any) {
+          console.error("========== RESEND EXCEPTION ==========");
+    console.error(resendErr);
+    console.error("Message:", resendErr?.message);
+    console.error("Stack:", resendErr?.stack);
+    console.error("======================================");
+
           console.warn('[Email Dispatch Warning] Resend send failed, attempting SMTP fallback:', resendErr?.message || resendErr);
         }
       }
@@ -188,6 +200,7 @@ Sent via Portfolio Backend Dispatcher
       }
     } catch (err: any) {
       console.error('[Email Dispatch Error]:', err);
+      
       return res.status(500).json({
         success: false,
         error: `Failed to send email via SMTP: ${err?.message || 'Check your Gmail App Password and Render Environment Variables.'}`,
