@@ -68,7 +68,7 @@ Sent via Portfolio Backend Dispatcher
       `.trim();
 
       // 1. First try Resend API (HTTPS based - works everywhere including Render)
-      const resendApiKey = process.env.RESEND_API_KEY || 're_DT71V89E_2oG7vk31t2zqiycDXeX2KuDF';
+      const resendApiKey = process.env.RESEND_API_KEY;
       console.log("========== RESEND DEBUG ==========");
 console.log("API Key Exists:", !!process.env.RESEND_API_KEY);
 console.log("API Key Prefix:", process.env.RESEND_API_KEY?.substring(0, 8));
