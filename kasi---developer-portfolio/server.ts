@@ -79,24 +79,40 @@ Sent via Portfolio Backend Dispatcher
         });
       }
 
-      // Helper to create transport with timeouts
+      // Resolve IPv4 address for SMTP host to prevent IPv6 ENETUNREACH errors on cloud hosting (Render)
+      let targetHost = smtpHost;
+      try {
+        const resolved = await dns.promises.lookup(smtpHost, { family: 4 });
+        if (resolved && resolved.address) {
+          targetHost = resolved.address;
+          console.log(`[Email Dispatch] Resolved ${smtpHost} to IPv4: ${targetHost}`);
+        }
+      } catch (lookupErr) {
+        console.warn('[Email Dispatch Warning] Could not resolve IPv4 explicitly, falling back to hostname:', lookupErr);
+      }
+
+      // Helper to create transport with explicit IPv4 forcing and timeouts
       const createTransportForPort = (port: number) => {
         return nodemailer.createTransport({
-          host: smtpHost,
+          host: targetHost,
           port: port,
-          secure: port === 465, // SSL for 465, STARTTLS for 587/25
+          secure: port === 465, // SSL for 465, STARTTLS for 587
           auth: {
             user: smtpUser,
             pass: smtpPass,
           },
-          connectionTimeout: 10000, // 10 seconds max connection
-          greetingTimeout: 8000,
-          socketTimeout: 12000,
+          connectionTimeout: 15000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
           tls: {
+            servername: 'smtp.gmail.com',
             rejectUnauthorized: false,
           },
-          // Force IPv4 address resolution to fix ENETUNREACH on Render/Cloud containers without IPv6
-          family: 4,
+          lookup: (hostname, _options, callback) => {
+            dns.lookup(hostname, { family: 4 }, (err, address) => {
+              callback(err, address, 4);
+            });
+          },
         } as any);
       };
 
