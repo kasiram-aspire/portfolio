@@ -10,9 +10,20 @@ dotenv.config({ path: path.join(process.cwd(), '.env.example') });
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   app.use(express.json());
+
+  // Enable CORS headers for API requests
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
 
   // Contact API endpoint for sending emails directly via SMTP/Server
   app.post('/api/contact', async (req, res) => {
@@ -46,7 +57,7 @@ Sent via Portfolio Backend Dispatcher
       `.trim();
 
       const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-      const smtpPort = Number(process.env.SMTP_PORT) || 587;
+      const configuredPort = Number(process.env.SMTP_PORT) || 587;
       const smtpUser = process.env.SMTP_USER || 'kasiram186@gmail.com';
       const smtpPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
 
@@ -54,41 +65,71 @@ Sent via Portfolio Backend Dispatcher
         console.error('[Email Dispatch Error] SMTP_PASS is missing in environment variables.');
         return res.status(500).json({
           success: false,
-          error: 'SMTP Password is missing. Please configure SMTP_PASS in your .env file.',
+          error: 'SMTP Password is missing. Please set SMTP_PASS in your Render Environment Variables.',
         });
       }
 
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
+      // Helper to create transport with timeouts
+      const createTransportForPort = (port: number) => {
+        return nodemailer.createTransport({
+          host: smtpHost,
+          port: port,
+          secure: port === 465, // SSL for 465, STARTTLS for 587/25
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+          connectionTimeout: 10000, // 10 seconds max connection
+          greetingTimeout: 8000,
+          socketTimeout: 12000,
+          tls: {
+            rejectUnauthorized: false,
+          },
+        });
+      };
 
-      await transporter.sendMail({
-        from: `"${name} via Portfolio" <${smtpUser}>`,
-        replyTo: email,
-        to: recipient,
-        subject: mailSubject,
-        text: emailBody,
-      });
+      let sendError: any = null;
+      let sentViaSmtp = false;
 
-      console.log(`[Email Dispatch] Successfully sent SMTP email from ${email} to ${recipient}`);
+      // Primary attempt using configured port
+      const portsToTry = configuredPort === 465 ? [465, 587] : [587, 465];
 
-      return res.status(200).json({
-        success: true,
-        message: 'Your message has been sent directly to kasiram186@gmail.com!',
-        recipient,
-        sentViaSmtp: true,
-      });
+      for (const port of portsToTry) {
+        try {
+          console.log(`[Email Dispatch] Attempting SMTP send via ${smtpHost}:${port}...`);
+          const transporter = createTransportForPort(port);
+          await transporter.sendMail({
+            from: `"${name} via Portfolio" <${smtpUser}>`,
+            replyTo: email,
+            to: recipient,
+            subject: mailSubject,
+            text: emailBody,
+          });
+
+          sentViaSmtp = true;
+          console.log(`[Email Dispatch] Successfully sent email on port ${port}!`);
+          break;
+        } catch (err: any) {
+          console.warn(`[Email Dispatch Warning] Port ${port} failed: ${err?.message || err}`);
+          sendError = err;
+        }
+      }
+
+      if (sentViaSmtp) {
+        return res.status(200).json({
+          success: true,
+          message: 'Your message has been sent directly to kasiram186@gmail.com!',
+          recipient,
+          sentViaSmtp: true,
+        });
+      } else {
+        throw sendError || new Error('SMTP connection timed out on all ports.');
+      }
     } catch (err: any) {
       console.error('[Email Dispatch Error]:', err);
       return res.status(500).json({
         success: false,
-        error: `Failed to send email via SMTP: ${err?.message || 'Check your Gmail App Password or network connection.'}`,
+        error: `Failed to send email via SMTP: ${err?.message || 'Check your Gmail App Password and Render Environment Variables.'}`,
       });
     }
   });
